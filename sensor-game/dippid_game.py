@@ -1,4 +1,4 @@
-
+import random
 import sys, math
 from PyQt5 import QtGui, QtCore, QtWidgets, uic
 from enum import Enum
@@ -87,10 +87,10 @@ class Ball:
         for brick in self.window.bricks[:]:
             collision = self.intersects_rectangle(brick)
             if collision == CollisionDirection.TOP_BOTTOM:
-                self.window.bricks.remove(brick)
+                self.on_brick_hit(brick)
                 self.speed_y *= -1
             elif collision == CollisionDirection.LEFT_RIGHT:
-                self.window.bricks.remove(brick)
+                self.on_brick_hit(brick)
                 self.speed_x *= -1
 
     def check_for_paddle_collision(self):
@@ -140,6 +140,12 @@ class Ball:
         if self.y > self.window.frameGeometry().height():
             self.window.game_state = GameState.LOST
 
+    def on_brick_hit(self, brick):
+        brick.hits_to_break -= 1
+
+        if brick.hits_to_break <= 0:
+            self.window.bricks.remove(brick)
+
 
 class PongPing(QtWidgets.QWidget):
 
@@ -172,13 +178,13 @@ class PongPing(QtWidgets.QWidget):
 
     def draw_bricks(self, painter):
         painter.setPen(QtGui.QPen(QtCore.Qt.black, 2, QtCore.Qt.SolidLine))
-        painter.setBrush(QtGui.QBrush(QtCore.Qt.red, QtCore.Qt.SolidPattern))
 
         for brick in self.bricks:
+            self.set_brush_to_brick_color(brick, painter)
             painter.drawRect(brick)
 
     def draw_paddle(self, painter):
-        # painter.drawRect(self.paddle.x, self.paddle.y, self.paddle.paddle_width, self.paddle.paddle_height)
+        painter.setBrush(QtGui.QBrush(QtCore.Qt.red, QtCore.Qt.SolidPattern))
         painter.drawRect(self.paddle)
 
     def draw_ball(self, painter):
@@ -190,7 +196,8 @@ class PongPing(QtWidgets.QWidget):
         height = (self.frameGeometry().height() / 2) / NUM_ROWS
         for x in range(0, BRICKS_PER_ROW):
             for y in range(0, NUM_ROWS):
-                self.bricks.append(Brick(1, x * width, y * height, width, height))
+                hits_to_break = random.randrange(1, 4)
+                self.bricks.append(Brick(hits_to_break, x * width, y * height, width, height))
 
     def init_paddle(self):
         xPos = self.frameGeometry().width() / 2 - PADDLE_WIDTH / 2
@@ -248,6 +255,16 @@ class PongPing(QtWidgets.QWidget):
         y_value = sensorVal['y']
 
         self.paddle.move(y_value * PADDLE_SPEED)
+
+    def set_brush_to_brick_color(self, brick, painter):
+        if brick.hits_to_break > 3:
+            painter.setBrush(QtGui.QBrush(QtCore.Qt.black, QtCore.Qt.SolidPattern))
+        elif brick.hits_to_break == 3:
+            painter.setBrush(QtGui.QBrush(QtCore.Qt.blue, QtCore.Qt.SolidPattern))
+        elif brick.hits_to_break == 2:
+            painter.setBrush(QtGui.QBrush(QtCore.Qt.green, QtCore.Qt.SolidPattern))
+        elif brick.hits_to_break == 1:
+            painter.setBrush(QtGui.QBrush(QtCore.Qt.yellow, QtCore.Qt.SolidPattern))
 
     def move_ball(self):
         self.ball.move()
