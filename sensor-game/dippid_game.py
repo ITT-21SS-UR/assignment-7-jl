@@ -97,6 +97,7 @@ class Ball:
         collision = self.intersects_rectangle(self.window.paddle)
         if collision == CollisionDirection.TOP_BOTTOM:
             self.speed_y *= -1
+            self.randomly_adjust_angle()  # not sure if we should include this, makes the game more fun though imo
         elif collision == CollisionDirection.LEFT_RIGHT:
             self.speed_x *= -1
 
@@ -145,6 +146,10 @@ class Ball:
 
         if brick.hits_to_break <= 0:
             self.window.bricks.remove(brick)
+
+    def randomly_adjust_angle(self):
+        random_adjustment = random.randrange(-1000, 1000) / 1000
+        self.speed_x += random_adjustment
 
 
 class PongPing(QtWidgets.QWidget):
