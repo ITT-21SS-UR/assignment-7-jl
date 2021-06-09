@@ -5,15 +5,20 @@ from enum import Enum
 from datetime import datetime
 from DIPPID import SensorUDP, SensorCapabilities
 
-BRICKS_PER_ROW = 10
+ROW_TOP_BUFFER = 40
+BRICKS_PER_ROW = 15
+BRICK_HEIGHT = 50
 NUM_ROWS = 5
 
-PADDLE_WIDTH = 100
-PADDLE_HEIGHT = 10
-PADDLE_SPEED = 6
+PADDLE_WIDTH = 130
+PADDLE_HEIGHT = 20
+PADDLE_SPEED = 10
 
-BALL_DIAMETER = 20
-BALL_SPEED = 2
+BALL_DIAMETER = 25
+BALL_SPEED = 2.5
+
+WINDOW_WIDTH = 1280
+WINDOW_HEIGHT = 720
 
 app = QtWidgets.QApplication(sys.argv)
 
@@ -85,13 +90,14 @@ class Ball:
 
     def check_for_brick_collision(self):
         for brick in self.window.bricks[:]:
-            collision = self.intersects_rectangle(brick)
-            if collision == CollisionDirection.TOP_BOTTOM:
+            direction = self.intersects_rectangle(brick)
+            if direction == CollisionDirection.TOP_BOTTOM:
                 self.on_brick_hit(brick)
                 self.speed_y *= -1
-            elif collision == CollisionDirection.LEFT_RIGHT:
+            elif direction == CollisionDirection.LEFT_RIGHT:
                 self.on_brick_hit(brick)
                 self.speed_x *= -1
+
 
     def check_for_paddle_collision(self):
         collision = self.intersects_rectangle(self.window.paddle)
@@ -143,6 +149,7 @@ class Ball:
 
     def on_brick_hit(self, brick):
         brick.hits_to_break -= 1
+        self.window.score += 1
 
         if brick.hits_to_break <= 0:
             self.window.bricks.remove(brick)
@@ -153,6 +160,12 @@ class Ball:
 
 
 class PongPing(QtWidgets.QWidget):
+    """
+    Main game class
+    Requires an Android phone with a connected DIPPID app to play
+    Press "Button 1" on your phone to start the game
+    Hold your phone sideways and tilt it left or right to move the paddle
+    """
 
     sensor = ()
     paddle = ()
@@ -160,10 +173,11 @@ class PongPing(QtWidgets.QWidget):
     timer = ()
     last_frame_timestamp = None
     bricks = []
+    score = 0
 
     def __init__(self):
         super().__init__()
-        self.win = uic.loadUi("game.ui")
+        self.resize(WINDOW_WIDTH, WINDOW_HEIGHT)
         self.game_state = GameState.INTRO
 
         self.init_sensor()
@@ -172,6 +186,7 @@ class PongPing(QtWidgets.QWidget):
         self.init_ball()
         self.init_game_loop_timer()
         self.setFocusPolicy(QtCore.Qt.StrongFocus)
+        self.score_rect = QtCore.QRect(10, 0, self.frameGeometry().width(), 30)
         self.show()
 
     def paintEvent(self, event):
@@ -180,6 +195,7 @@ class PongPing(QtWidgets.QWidget):
         self.draw_bricks(painter)
         self.draw_paddle(painter)
         self.draw_ball(painter)
+        self.draw_score(painter)
 
     def draw_bricks(self, painter):
         painter.setPen(QtGui.QPen(QtCore.Qt.black, 2, QtCore.Qt.SolidLine))
@@ -196,17 +212,24 @@ class PongPing(QtWidgets.QWidget):
         painter.setBrush(QtGui.QBrush(QtCore.Qt.black, QtCore.Qt.SolidPattern))
         painter.drawEllipse(self.ball.x, self.ball.y, self.ball.radius, self.ball.radius)
 
+    def draw_score(self, painter):
+        painter.setPen(QtGui.QColor(55, 55, 55))
+        painter.setFont(QtGui.QFont('Decorative', 18))
+        text = "Score: " + str(self.score)
+        painter.drawText(self.score_rect, QtCore.Qt.AlignLeft, text)
+
     def init_bricks(self):
         width = self.frameGeometry().width() / BRICKS_PER_ROW
-        height = (self.frameGeometry().height() / 2) / NUM_ROWS
+        height = (self.frameGeometry().height() / 2) / NUM_ROWS  # uncomment this line for height auto-calculation
+        # height = BRICK_HEIGHT                                  # uncomment this line for manual height assignment
         for x in range(0, BRICKS_PER_ROW):
             for y in range(0, NUM_ROWS):
                 hits_to_break = random.randrange(1, 4)
-                self.bricks.append(Brick(hits_to_break, x * width, y * height, width, height))
+                self.bricks.append(Brick(hits_to_break, x * width, y * height + ROW_TOP_BUFFER, width, height))
 
     def init_paddle(self):
         xPos = self.frameGeometry().width() / 2 - PADDLE_WIDTH / 2
-        yPos = self.frameGeometry().height() - 20  # seems like a good default height for the paddle
+        yPos = self.frameGeometry().height() - PADDLE_HEIGHT - 10
 
         self.paddle = Paddle(xPos, yPos, PADDLE_WIDTH, PADDLE_HEIGHT, self)
 
