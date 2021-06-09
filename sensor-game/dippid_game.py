@@ -21,7 +21,8 @@ app = QtWidgets.QApplication(sys.argv)
 class GameState(Enum):
     INTRO = 1
     STARTED = 2
-    FINISHED = 3
+    WON = 3
+    LOST = 4
 
 
 class CollisionDirection(Enum):
@@ -75,6 +76,7 @@ class Ball:
         self.y += self.speed_y
 
         self.check_for_collisions()
+        self.check_for_game_over()
 
     def check_for_collisions(self):
         self.check_for_window_collision()
@@ -92,8 +94,11 @@ class Ball:
                 self.speed_x *= -1
 
     def check_for_paddle_collision(self):
-        if self.intersects_rectangle(self.window.paddle):
+        collision = self.intersects_rectangle(self.window.paddle)
+        if collision == CollisionDirection.TOP_BOTTOM:
             self.speed_y *= -1
+        elif collision == CollisionDirection.LEFT_RIGHT:
+            self.speed_x *= -1
 
     def check_for_window_collision(self):
         if self.x + self.radius * 2 > self.window.frameGeometry().width() or self.x <= 0:
@@ -114,7 +119,7 @@ class Ball:
         if self.y_center() > rect.bottom():
             test_y = rect.bottom()
         elif self.y_center() < rect.top():
-            test_y = rect.top()
+            test_y = -rect.top()
 
         dist_x = self.x_center() - test_x
         dist_y = self.y_center() - test_y
@@ -123,13 +128,17 @@ class Ball:
         if distance <= self.radius:
             if dist_x == 0:
                 return CollisionDirection.TOP_BOTTOM
-            else:
+            elif dist_y == 0:
                 return CollisionDirection.LEFT_RIGHT
 
         return False
 
     def clamp(self, num, min_value, max_value):
         return max(min(num, max_value), min_value)
+
+    def check_for_game_over(self):
+        if self.y > self.window.frameGeometry().height():
+            self.window.game_state = GameState.LOST
 
 
 class PongPing(QtWidgets.QWidget):
@@ -210,6 +219,18 @@ class PongPing(QtWidgets.QWidget):
 
         if self.game_state == GameState.INTRO:
             self.game_state = GameState.STARTED
+
+        if self.game_state == GameState.LOST:
+            self.restart_game()
+
+    def restart_game(self):
+        self.bricks = []
+        self.init_bricks()
+
+        self.init_ball()
+
+        self.update()
+        self.game_state = GameState.INTRO
 
     def game_loop(self):
         if self.game_state == GameState.STARTED:
