@@ -5,9 +5,9 @@ from enum import Enum
 from PyQt5 import QtGui, QtCore, QtWidgets
 from DIPPID import SensorUDP, SensorCapabilities
 
-ROW_TOP_BUFFER = 40
+ROW_TOP_BUFFER = 40                     # size of the space at the top of the screen that should be empty
 BRICKS_PER_ROW = 15
-BRICK_HEIGHT = 50
+BRICK_HEIGHT = 50                       # height calculation may be automatic - check init_bricks() in the main class
 NUM_ROWS = 5
 
 PADDLE_WIDTH = 130
