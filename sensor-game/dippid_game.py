@@ -6,9 +6,9 @@ from PyQt5 import QtGui, QtCore, QtWidgets
 from DIPPID import SensorUDP, SensorCapabilities
 
 ROW_TOP_BUFFER = 40
-BRICKS_PER_ROW = 2
+BRICKS_PER_ROW = 15
 BRICK_HEIGHT = 50
-NUM_ROWS = 1
+NUM_ROWS = 5
 
 PADDLE_WIDTH = 130
 PADDLE_HEIGHT = 20
