@@ -1,14 +1,14 @@
+import math
 import random
-import sys, math
-from PyQt5 import QtGui, QtCore, QtWidgets, uic
+import sys
 from enum import Enum
-from datetime import datetime
+from PyQt5 import QtGui, QtCore, QtWidgets
 from DIPPID import SensorUDP, SensorCapabilities
 
 ROW_TOP_BUFFER = 40
-BRICKS_PER_ROW = 15
+BRICKS_PER_ROW = 2
 BRICK_HEIGHT = 50
-NUM_ROWS = 5
+NUM_ROWS = 1
 
 PADDLE_WIDTH = 130
 PADDLE_HEIGHT = 20
@@ -36,6 +36,10 @@ class CollisionDirection(Enum):
 
 
 class Brick(QtCore.QRect):
+    """
+    Class representing the bricks.
+    Has an additional field for how many hits it takes to break the brick.
+    """
 
     def __init__(self, hits_to_break, x, y, width, height):
         super().__init__(x, y, width, height)
@@ -43,6 +47,10 @@ class Brick(QtCore.QRect):
 
 
 class Paddle(QtCore.QRect):
+    """
+    Class representing the paddle (or 'player').
+    Can be moved within the boundaries of the widget.
+    """
 
     def __init__(self, x, y, width, height, window):
         super().__init__(x, y, width, height)
@@ -60,6 +68,10 @@ class Paddle(QtCore.QRect):
 
 
 class Ball:
+    """
+    Class representing the ball.
+    Can be moved and has functions to check for and handle collisions with other game objects
+    """
 
     def __init__(self, x, y, diameter, window):
         self.x = x
@@ -97,7 +109,6 @@ class Ball:
             elif direction == CollisionDirection.LEFT_RIGHT:
                 self.on_brick_hit(brick)
                 self.speed_x *= -1
-
 
     def check_for_paddle_collision(self):
         collision = self.intersects_rectangle(self.window.paddle)
@@ -145,7 +156,7 @@ class Ball:
 
     def check_for_game_over(self):
         if self.y > self.window.frameGeometry().height():
-            self.window.game_state = GameState.LOST
+            self.window.on_game_over()
 
     def on_brick_hit(self, brick):
         brick.hits_to_break -= 1
@@ -153,6 +164,7 @@ class Ball:
 
         if brick.hits_to_break <= 0:
             self.window.bricks.remove(brick)
+            self.window.check_for_win()
 
     def randomly_adjust_angle(self):
         random_adjustment = random.randrange(-1000, 1000) / 1000
@@ -161,10 +173,11 @@ class Ball:
 
 class PongPing(QtWidgets.QWidget):
     """
-    Main game class
-    Requires an Android phone with a connected DIPPID app to play
-    Press "Button 1" on your phone to start the game
-    Hold your phone sideways and tilt it left or right to move the paddle
+    Main game class.
+    Requires an Android phone with a connected DIPPID app to play.
+    Press "Button 1" on your phone to start the game.
+    Hold your phone sideways and tilt it left or right to move the paddle.
+    The game loop is handled by a QTimer and runs at "60 fps".
     """
 
     sensor = ()
@@ -187,6 +200,8 @@ class PongPing(QtWidgets.QWidget):
         self.init_game_loop_timer()
         self.setFocusPolicy(QtCore.Qt.StrongFocus)
         self.score_rect = QtCore.QRect(10, 0, self.frameGeometry().width(), 30)
+        self.victory_rect = QtCore.QRect(0, self.frameGeometry().height() / 1.5,
+                                         self.frameGeometry().width(), 100)
         self.show()
 
     def paintEvent(self, event):
@@ -196,6 +211,15 @@ class PongPing(QtWidgets.QWidget):
         self.draw_paddle(painter)
         self.draw_ball(painter)
         self.draw_score(painter)
+
+        if self.game_state == GameState.INTRO:
+            self.draw_intro_message(painter)
+
+        elif self.game_state == GameState.WON:
+            self.draw_victory_message(painter)
+
+        elif self.game_state == GameState.LOST:
+            self.draw_lose_message(painter)
 
     def draw_bricks(self, painter):
         painter.setPen(QtGui.QPen(QtCore.Qt.black, 2, QtCore.Qt.SolidLine))
@@ -217,6 +241,19 @@ class PongPing(QtWidgets.QWidget):
         painter.setFont(QtGui.QFont('Decorative', 18))
         text = "Score: " + str(self.score)
         painter.drawText(self.score_rect, QtCore.Qt.AlignLeft, text)
+
+    def draw_victory_message(self, painter):
+        text = "You won!\nPress Button 1 to start another round"
+        painter.drawText(self.victory_rect, QtCore.Qt.AlignCenter, text)
+
+    def draw_lose_message(self, painter):
+        text = "You lost!\nPress Button 1 to start another round"
+        painter.drawText(self.victory_rect, QtCore.Qt.AlignCenter, text)
+
+    def draw_intro_message(self, painter):
+        text = "Hold your phone sideways.\nPress 'Button 1' to start the game.\nWhen the game is started," \
+               " tilt your phone sideways to move the paddle."
+        painter.drawText(self.victory_rect, QtCore.Qt.AlignCenter, text)
 
     def init_bricks(self):
         width = self.frameGeometry().width() / BRICKS_PER_ROW
@@ -255,7 +292,7 @@ class PongPing(QtWidgets.QWidget):
         if self.game_state == GameState.INTRO:
             self.game_state = GameState.STARTED
 
-        if self.game_state == GameState.LOST:
+        if self.game_state == GameState.LOST or self.game_state == GameState.WON:
             self.restart_game()
 
     def restart_game(self):
@@ -263,6 +300,10 @@ class PongPing(QtWidgets.QWidget):
         self.init_bricks()
 
         self.init_ball()
+
+        # reset score if the player lost
+        if self.game_state == GameState.LOST:
+            self.score = 0
 
         self.update()
         self.game_state = GameState.INTRO
@@ -284,7 +325,19 @@ class PongPing(QtWidgets.QWidget):
 
         self.paddle.move(y_value * PADDLE_SPEED)
 
+    def check_for_win(self):
+        if len(self.bricks) <= 0:
+            self.game_state = GameState.WON
+            self.update()
+
+    def on_game_over(self):
+        self.game_state = GameState.LOST
+        self.update()
+
     def set_brush_to_brick_color(self, brick, painter):
+        """
+        Color the bricks according to how many hits it takes to break them
+        """
         if brick.hits_to_break > 3:
             painter.setBrush(QtGui.QBrush(QtCore.Qt.black, QtCore.Qt.SolidPattern))
         elif brick.hits_to_break == 3:
