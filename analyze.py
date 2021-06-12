@@ -77,7 +77,7 @@ def create_plot_widget_z():
 
 def create_plot_widget_normal():
     pw_n = pg.PlotWidget()
-    layout.addWidget(pw_n, 0, 4)
+    layout.addWidget(pw_n, 1, 2)
     pw_n.setYRange(-1, 1)
     pw_n.setXRange(-1, 1)
     pw_n.setTitle("Normal Vector")
