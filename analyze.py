@@ -33,23 +33,40 @@ class NormalVectorNode(Node):
 
         self.normal_vector = ()
 
-    def process(self, **kwds):
+    def process(self, **kargs):
         """
         Processes the two inputs and returns the value
         accel_1 is negated because this seemed more intuitive on the device I tested with (Pixel 3)
         Without negating, the rotation would only be shown properly when pointing the charging port at the screen,
         instead of the usual "top" of the phone.
         """
-        accel_1 = -kwds[self.AXIS_1_IN][0]  # negated because this seemed more logical on my device
-        accel_2 = kwds[self.AXIS_2_IN][0]
+        accel_1 = -kargs[self.AXIS_1_IN][0]  # negated because this seemed more logical on my device
+        accel_2 = kargs[self.AXIS_2_IN][0]
 
         # didn't work with list of tuples, using np.array instead like in DIPPIDNode
         self.normal_vector = np.array([[0, 0], [accel_1, accel_2]])
-        print(self.normal_vector)
         return {self.DATA_OUT: self.normal_vector}
 
 
-fclib.registerNodeType(NormalVectorNode, [('Data',)])
+fclib.registerNodeType(NormalVectorNode, [('Data', 'Combined')])
+
+
+class LogNode(Node):
+    INPUT = "input"
+
+    nodeName = "LogNode"
+
+    def __init__(self, name):
+        terminals = {
+            self.INPUT: dict(io='in'),
+        }
+        Node.__init__(self, name, terminals=terminals)
+
+    def process(self, **kargs):
+        print(kargs[self.INPUT][0])
+
+
+fclib.registerNodeType(LogNode, [('Log',)])
 
 
 def create_plot_widget_x():
