@@ -10,11 +10,13 @@ from DIPPID import SensorUDP, SensorSerial, SensorWiimote
 from DIPPID_pyqtnode import BufferNode, DIPPIDNode
 import sys
 
+
 class Axis(Enum):
     X = "X"
     Y = "Y"
     Z = "Z"
     NORMAL = "Normal"
+
 
 class NormalVectorNode(Node):
     AXIS_1_IN = "axis1In"
@@ -92,6 +94,7 @@ def create_plot_widget_z():
     pw_z.setTitle("Z-Accelerometer")
     plot_widget_dict[Axis.Z] = pw_z
 
+
 def create_plot_widget_normal():
     pw_n = pg.PlotWidget()
     layout.addWidget(pw_n, 1, 2)
@@ -99,6 +102,7 @@ def create_plot_widget_normal():
     pw_n.setXRange(-1, 1)
     pw_n.setTitle("Normal Vector")
     plot_widget_dict[Axis.NORMAL] = pw_n
+
 
 def create_nodes():
     x_location = 250
@@ -130,7 +134,6 @@ def connect_nodes():
 
     # Log Node
     fc.connectTerminals(dippid_node['accelX'], log_node[LogNode.INPUT])
-
 
 
 if __name__ == '__main__':
