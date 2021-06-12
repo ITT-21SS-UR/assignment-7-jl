@@ -48,7 +48,7 @@ class NormalVectorNode(Node):
         return {self.DATA_OUT: self.normal_vector}
 
 
-fclib.registerNodeType(NormalVectorNode, [('Data', 'Combined')])
+fclib.registerNodeType(NormalVectorNode, [('Assignment 7',)])
 
 
 class LogNode(Node):
@@ -66,7 +66,7 @@ class LogNode(Node):
         print(kargs[self.INPUT][0])
 
 
-fclib.registerNodeType(LogNode, [('Log',)])
+fclib.registerNodeType(LogNode, [('Assignment 7',)])
 
 
 def create_plot_widget_x():
@@ -113,10 +113,12 @@ def create_nodes():
 
 
 def connect_nodes():
+    # DIPPID Nodes to Buffer Nodes
     fc.connectTerminals(dippid_node['accelX'], buffer_node_x['dataIn'])
     fc.connectTerminals(dippid_node['accelY'], buffer_node_y['dataIn'])
     fc.connectTerminals(dippid_node['accelZ'], buffer_node_z['dataIn'])
 
+    # Buffer Nodes to PlotWidget Nodes
     fc.connectTerminals(buffer_node_x['dataOut'], node_dict[Axis.X]['In'])
     fc.connectTerminals(buffer_node_y['dataOut'], node_dict[Axis.Y]['In'])
     fc.connectTerminals(buffer_node_z['dataOut'], node_dict[Axis.Z]['In'])
@@ -125,6 +127,9 @@ def connect_nodes():
     fc.connectTerminals(dippid_node['accelX'], normal_vector_node[NormalVectorNode.AXIS_1_IN])
     fc.connectTerminals(dippid_node['accelZ'], normal_vector_node[NormalVectorNode.AXIS_2_IN])
     fc.connectTerminals(normal_vector_node[NormalVectorNode.DATA_OUT], node_dict[Axis.NORMAL]['In'])
+
+    # Log Node
+    fc.connectTerminals(dippid_node['accelX'], log_node[LogNode.INPUT])
 
 
 
@@ -151,11 +156,12 @@ if __name__ == '__main__':
 
     create_nodes()
 
-    dippid_node = fc.createNode('DIPPID', pos=(0, 50))
+    dippid_node = fc.createNode('DIPPID', pos=(0, -50))
     buffer_node_x = fc.createNode('Buffer', pos=(100, -100))
     buffer_node_y = fc.createNode('Buffer', pos=(100, -50))
     buffer_node_z = fc.createNode('Buffer', pos=(100, 0))
-    normal_vector_node = fc.createNode(NormalVectorNode.nodeName, pos=(200, 0))
+    normal_vector_node = fc.createNode(NormalVectorNode.nodeName, pos=(100, 50))
+    log_node = fc.createNode(LogNode.nodeName, pos=(250, 100))
 
     connect_nodes()
 
