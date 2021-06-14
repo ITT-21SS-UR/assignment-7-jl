@@ -3,7 +3,6 @@ import json
 from threading import Thread
 from time import sleep
 from datetime import datetime
-from enum import Enum
 import signal
 
 # those modules are imported dynamically during runtime
@@ -204,17 +203,6 @@ class SensorWiimote(Sensor):
         if self._data[key] != value:
             self._data[key] = value
             self._notify_callbacks(key)
-
-
-class SensorCapabilities:
-    BUTTON_1 = 'button_1'
-    BUTTON_2 = 'button_2'
-    BUTTON_3 = 'button_3'
-    BUTTON_4 = 'button_4'
-    ACCELEROMETER = 'accelerometer'
-    GYROSCOPE = 'gyroscope'
-    GRAVITY = 'gravity'
-
 
 # close the program softly when ctrl+c is pressed
 def handle_interrupt_signal(signal, frame):

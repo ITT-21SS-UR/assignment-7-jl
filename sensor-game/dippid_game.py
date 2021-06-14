@@ -3,7 +3,7 @@ import random
 import sys
 from enum import Enum
 from PyQt5 import QtGui, QtCore, QtWidgets
-from DIPPID import SensorUDP, SensorCapabilities
+from DIPPID import SensorUDP
 
 ROW_TOP_BUFFER = 40                     # size of the space at the top of the screen that should be empty
 BRICKS_PER_ROW = 15
@@ -33,6 +33,19 @@ class GameState(Enum):
 class CollisionDirection(Enum):
     LEFT_RIGHT = 1
     TOP_BOTTOM = 2
+
+
+class SensorCapabilities:
+    """
+    Holds constants for DIPPID sensors
+    """
+    BUTTON_1 = 'button_1'
+    BUTTON_2 = 'button_2'
+    BUTTON_3 = 'button_3'
+    BUTTON_4 = 'button_4'
+    ACCELEROMETER = 'accelerometer'
+    GYROSCOPE = 'gyroscope'
+    GRAVITY = 'gravity'
 
 
 class Brick(QtCore.QRect):
