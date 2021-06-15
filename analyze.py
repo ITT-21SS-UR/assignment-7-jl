@@ -136,6 +136,24 @@ def connect_nodes():
     fc.connectTerminals(dippid_node['accelX'], log_node[LogNode.INPUT])
 
 
+def set_port_from_params():
+    # if no parameter is passed, just use the default (5700)
+    if len(sys.argv) == 1:
+        return
+
+    if len(sys.argv) > 2:
+        print("Please pass only a port number as parameter")
+        sys.exit(4)
+    else:
+        try:
+            port = int(sys.argv[1])
+            dippid_node.addr = port
+            dippid_node.text.setText(sys.argv[1])
+        except ValueError:
+            print("Please pass a valid port number as parameter")
+            sys.exit(4)
+
+
 if __name__ == '__main__':
     app = QtGui.QApplication([])
     win = QtGui.QMainWindow()
@@ -165,6 +183,8 @@ if __name__ == '__main__':
     buffer_node_z = fc.createNode('Buffer', pos=(100, 0))
     normal_vector_node = fc.createNode(NormalVectorNode.nodeName, pos=(100, 50))
     log_node = fc.createNode(LogNode.nodeName, pos=(250, 100))
+
+    set_port_from_params()
 
     connect_nodes()
 
